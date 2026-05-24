@@ -277,6 +277,20 @@ select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;p
   <div class="page" id="page-settings">
     <div class="page-scroll">
 
+      <!-- SYNC SETTINGS -->
+      <div class="section-label">Sync Settings Across Devices</div>
+      <div class="filter-card" style="gap:8px">
+        <div style="font-size:13px;color:var(--text2);line-height:1.65">Copy all your filters, watchlist and Telegram settings from one device and paste them on another.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="exportSettings()" style="flex:1;font-size:12px">📤 Copy settings</button>
+          <button class="btn blue" onclick="importSettings()" style="flex:1;font-size:12px">📥 Paste settings</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.7">
+          On laptop: tap <strong style="color:var(--text2)">Copy settings</strong> → copies a code to clipboard<br>
+          On phone: tap <strong style="color:var(--text2)">Paste settings</strong> → paste the code → done
+        </div>
+      </div>
+
       <div class="section-label">Browser Notifications</div>
       <div class="card">
         <div class="card-row">
@@ -927,7 +941,92 @@ function toast(msg){
   clearTimeout(tTimer);tTimer=setTimeout(()=>el.classList.remove('show'),2500);
 }
 
+// ── FILTER PERSISTENCE ─────────────────────────────────────────────────────
+const FILTER_KEYS={
+  pctSlider:'f_pct',rvolSlider:'f_rvol',
+  priceMin:'f_prMin',priceMax:'f_prMax',
+  floatMax:'f_flt',volMin:'f_vol',
+  mcapMin:'f_mcMin',mcapMax:'f_mcMax'
+};
+
+function saveFilters(){
+  const obj={};
+  for(const[id,key] of Object.entries(FILTER_KEYS)){
+    obj[key]=document.getElementById(id).value;
+  }
+  localStorage.setItem('filters',JSON.stringify(obj));
+}
+
+function loadFilters(){
+  const saved=localStorage.getItem('filters');
+  if(!saved)return;
+  try{
+    const obj=JSON.parse(saved);
+    for(const[id,key] of Object.entries(FILTER_KEYS)){
+      if(obj[key]!==undefined){
+        const el=document.getElementById(id);
+        el.value=obj[key];
+        // update slider labels
+        if(id==='pctSlider')document.getElementById('pctLbl').textContent='+'+obj[key]+'%';
+        if(id==='rvolSlider')document.getElementById('rvolLbl').textContent=obj[key]+'×';
+      }
+    }
+  }catch(_){}
+}
+
+// Auto-save filters on any change
+Object.keys(FILTER_KEYS).forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('change',saveFilters);
+  if(el&&el.type==='range')el.addEventListener('input',saveFilters);
+});
+
+// ── EXPORT / IMPORT SETTINGS ───────────────────────────────────────────────
+function exportSettings(){
+  const cfg={
+    wl:S.wl, kw:S.kw,
+    tgToken:S.tgToken, tgChatWl:S.tgChatWl, tgChatScr:S.tgChatScr,
+    filters:localStorage.getItem('filters')||'{}'
+  };
+  const str=btoa(JSON.stringify(cfg));
+  // copy to clipboard
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(str).then(()=>toast('✓ Settings copied — paste into your phone'));
+  } else {
+    // fallback — show in prompt
+    prompt('Copy this settings code and paste it on your phone:',str);
+  }
+}
+
+function importSettings(){
+  const str=prompt('Paste your settings code here:');
+  if(!str)return;
+  try{
+    const cfg=JSON.parse(atob(str.trim()));
+    if(cfg.wl)S.wl=cfg.wl;
+    if(cfg.kw)S.kw=cfg.kw;
+    if(cfg.tgToken)S.tgToken=cfg.tgToken;
+    if(cfg.tgChatWl)S.tgChatWl=cfg.tgChatWl;
+    if(cfg.tgChatScr)S.tgChatScr=cfg.tgChatScr;
+    localStorage.setItem('wl2',JSON.stringify(S.wl));
+    localStorage.setItem('kw2',JSON.stringify(S.kw));
+    localStorage.setItem('tgToken',S.tgToken);
+    localStorage.setItem('tgChatWl',S.tgChatWl);
+    localStorage.setItem('tgChatScr',S.tgChatScr);
+    if(cfg.filters)localStorage.setItem('filters',cfg.filters);
+    // reload inputs
+    loadFilters();
+    document.getElementById('tgToken').value=S.tgToken;
+    document.getElementById('tgChatWl').value=S.tgChatWl;
+    document.getElementById('tgChatScr').value=S.tgChatScr;
+    updateTgUI(!!(S.tgChatWl||S.tgChatScr));
+    renderWatchlist();renderKw();
+    toast('✓ Settings imported successfully!');
+  }catch(_){toast('❌ Invalid code — try copying again');}
+}
+
 // ── INIT ───────────────────────────────────────────────────────────────────
+loadFilters();
 if(S.tgToken){
   document.getElementById('tgToken').value=S.tgToken;
   document.getElementById('tgChatWl').value=S.tgChatWl;
