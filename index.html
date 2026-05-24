@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scanner">
+<meta name="theme-color" content="#00d084">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<title>Momentum Scanner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0c0f;
+  --bg2: #0f1217;
+  --bg3: #141820;
+  --border: #1e2530;
+  --border2: #252d3a;
+  --green: #00d084;
+  --green-dim: rgba(0,208,132,0.13);
+  --green-mid: rgba(0,208,132,0.27);
+  --red: #ff4560;
+  --red-dim: rgba(255,69,96,0.1);
+  --amber: #ffb800;
+  --amber-dim: rgba(255,184,0,0.1);
+  --blue: #4d9fff;
+  --blue-dim: rgba(77,159,255,0.1);
+  --text: #e2e8f0;
+  --text2: #8896a8;
+  --text3: #4a5568;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tab-h: 60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.logo { display: flex; align-items: center; gap: 9px; }
+
+.logo-mark {
+  width: 30px; height: 30px;
+  background: var(--green);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.logo-mark svg { width: 18px; height: 18px; }
+
+.logo-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+
+.logo-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: .05em;
+}
+
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.status-pill.live {
+  border-color: rgba(0,208,132,0.4);
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-pill.live .dot { animation: blink 1.5s infinite; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+
+.sgt-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid rgba(255,184,0,0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* ── MARKET BANNER ── */
+.market-banner {
+  padding: 7px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-bottom: 1px solid rgba(255,184,0,0.15);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.market-banner.open {
+  color: var(--green);
+  background: var(--green-dim);
+  border-color: rgba(0,208,132,0.15);
+}
+
+/* ── MAIN SHELL ── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ── PAGES ── */
+.pages {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.page {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.page.active { display: flex; }
+
+.page-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
+}
+
+.page-scroll::-webkit-scrollbar { display: none; }
+
+/* ── BOTTOM TABS ── */
+.tab-bar {
+  display: flex;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: color .15s;
+  position: relative;
+}
+
+.tab-btn.active { color: var(--green); }
+
+.tab-btn svg {
+  width: 20px; height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 14px);
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  display: none;
+}
+
+.tab-badge.show { display: flex; }
+
+/* ── SHARED COMPONENTS ── */
+.section-label {
+  padding: 12px 16px 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.card {
+  margin: 0 12px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.card-row:last-child { border-bottom: none; }
+
+.row-label {
+  font-size: 13px;
+  color: var(--text2);
+  flex: 1;
+}
+
+.row-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.row-val.green { color: var(--green); }
+.row-val.amber { color: var(--amber); }
+.row-val.red { color: var(--red); }
+
+/* Inputs */
+input[type=text], input[type=number], input[type=password] {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+input:focus { border-color: var(--green); }
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--green-mid);
+}
+
+select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.btn:active { opacity: .75; transform: scale(.97); }
+.btn.primary { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 600; }
+.btn.danger { border-color: rgba(255,69,96,.4); color: var(--red); }
+.btn.blue { border-color: rgba(77,159,255,.4); color: var(--blue); background: var(--blue-dim); }
+
+.btn-full {
+  width: calc(100% - 24px);
+  margin: 0 12px;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-full:active { transform: scale(.98); }
+
+.btn-scan {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.btn-scan.scanning {
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid rgba(255,69,96,.3);
+}
+
+/* ── SCANNER PAGE ── */
+.scan-controls {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scanner-item {
+  margin: 0 12px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  animation: slideUp .25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scanner-item.hot { border-color: rgba(0,208,132,.35); background: var(--green-dim); }
+
+.si-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.si-sym {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.si-price {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.si-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.si-stat { display: flex; flex-direction: column; gap: 2px; }
+.si-stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+.si-stat-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text2); }
+.si-stat-val.hot { color: var(--green); }
+.si-stat-val.warn { color: var(--amber); }
+
+/* ── NEWS PAGE ── */
+.news-item {
+  margin: 0 12px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  animation: slideUp .25s ease;
+}
+
+.news-item.catalyst { border-color: rgba(0,208,132,.4); border-left: 3px solid var(--green); }
+.news-item.warning { border-color: rgba(255,69,96,.3); border-left: 3px solid var(--red); }
+
+.ni-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  flex-wrap: wrap;
+}
+
+.ni-ticker {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(0,208,132,.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.ni-source {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.ni-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+.ni-title {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+
+.tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+.tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.tag-g { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,208,132,.25); }
+.tag-b { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(77,159,255,.25); }
+.tag-a { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,184,0,.25); }
+.tag-r { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,69,96,.25); }
+
+/* ── WATCHLIST PAGE ── */
+.add-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
+
+.add-bar input { flex: 1; text-transform: uppercase; }
+
+.wl-item {
+  display: flex;
+  align-items: center;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.wl-sym {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 55px;
+}
+
+.wl-price {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.wl-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.wl-chg {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wl-chg.up { color: var(--green); }
+.wl-chg.down { color: var(--red); }
+
+.alert-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: blink 1.2s infinite;
+  flex-shrink: 0;
+}
+
+.del-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--text3);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.del-btn:active { color: var(--red); border-color: rgba(255,69,96,.4); }
+
+/* ── ALERTS PAGE ── */
+.alert-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  animation: slideUp .2s ease;
+}
+
+.alert-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-sym {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  min-width: 50px;
+}
+
+.alert-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+.alert-msg {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* ── SETTINGS PAGE ── */
+.settings-group {
+  margin-bottom: 6px;
+}
+
+.filter-card {
+  margin: 0 12px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-name {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.filter-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.tg-card {
+  margin: 0 12px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tg-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tg-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+}
+
+.tg-dot.on { background: var(--green); animation: blink 2s infinite; }
+.tg-dot.err { background: var(--red); }
+
+.tg-status-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.tg-status-text.on { color: var(--green); }
+
+.instructions {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.instructions ol {
+  padding-left: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 2;
+}
+
+.instructions li code {
+  background: var(--border2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--green);
+}
+
+.kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.kw-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.kw-pill button {
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.interval-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.interval-row label {
+  font-size: 13px;
+  color: var(--text2);
+  flex: 1;
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 30px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+.empty-icon { font-size: 36px; opacity: .5; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-h) + var(--safe-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0;
+  transition: all .25s;
+  z-index: 200;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Install prompt */
+.install-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--blue-dim);
+  border-bottom: 1px solid rgba(77,159,255,.2);
+  font-size: 12px;
+  color: var(--blue);
+}
+
+.install-banner.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none">
+          <path d="M2 14 L9 4 L16 14" stroke="#0a0c0f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5.5 14 L9 9 L12.5 14" stroke="#0a0c0f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="#0a0c0f"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">SCANNER</div>
+        <div class="logo-sub">MA BOUNCE · SGT</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill" id="statusPill">
+        <div class="dot"></div>
+        <span id="statusTxt">IDLE</span>
+      </div>
+      <div class="sgt-time" id="sgtClock">--:--</div>
+    </div>
+  </div>
+
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="installBanner">
+    <span>📲 Add to Home Screen for app experience</span>
+    <button class="btn" style="font-size:11px;padding:5px 10px" id="installBtn">Install</button>
+  </div>
+
+  <!-- MARKET BANNER -->
+  <div class="market-banner" id="marketBanner">Loading market hours...</div>
+
+  <!-- PAGES -->
+  <div class="pages">
+
+    <!-- ── SCANNER PAGE ── -->
+    <div class="page active" id="page-scanner">
+      <div class="page-scroll">
+        <div class="scan-controls">
+          <button class="btn-full btn-scan" id="scanBtn" onclick="toggleScan()">
+            <span id="scanBtnIcon">▶</span>
+            <span id="scanBtnText">START SCANNING</span>
+          </button>
+          <div class="interval-row">
+            <label>Refresh interval</label>
+            <select id="intervalSel" style="width:auto">
+              <option value="60">60 sec</option>
+              <option value="120" selected>2 min</option>
+              <option value="300">5 min</option>
+            </select>
+          </div>
+        </div>
+        <div class="section-label">Scanner hits — stocks meeting your filters</div>
+        <div id="scannerList">
+          <div class="empty">
+            <div class="empty-icon">📊</div>
+            Press Start Scanning<br>Results appear here when stocks<br>meet your screener filters
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NEWS PAGE ── -->
+    <div class="page" id="page-news">
+      <div class="page-scroll">
+        <div style="padding:12px 12px 0;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">News & Filings</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="newsCountTxt">0 items</span>
+        </div>
+        <div style="height:10px"></div>
+        <div id="newsList">
+          <div class="empty">
+            <div class="empty-icon">📡</div>
+            News from your watchlist<br>appears here after scanning starts.<br><br>
+            <span style="font-size:10px;color:var(--text3)">Yahoo Finance RSS + SEC EDGAR 8-K</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WATCHLIST PAGE ── -->
+    <div class="page" id="page-watchlist">
+      <div class="page-scroll">
+        <div class="add-bar">
+          <input type="text" id="tickerInput" placeholder="Enter ticker e.g. AAPL" maxlength="6"
+            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+            onkeydown="if(event.key==='Enter')addTicker()">
+          <button class="btn primary" onclick="addTicker()">Add</button>
+        </div>
+        <div class="card" style="margin-bottom:8px">
+          <div id="watchlistEl">
+            <div class="empty" style="padding:30px">
+              <div class="empty-icon">📋</div>
+              Add tickers above to start
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ALERTS PAGE ── -->
+    <div class="page" id="page-alerts">
+      <div class="page-scroll">
+        <div style="padding:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Alert Log</span>
+          <button class="btn danger" style="font-size:11px;padding:5px 10px" onclick="clearAlerts()">Clear</button>
+        </div>
+        <div id="alertList">
+          <div class="empty">
+            <div class="empty-icon">🔔</div>
+            Catalyst alerts appear here<br>and fire to Telegram + browser
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS PAGE ── -->
+    <div class="page" id="page-settings">
+      <div class="page-scroll">
+
+        <!-- Notifications -->
+        <div class="section-label">Notifications</div>
+        <div class="card">
+          <div class="card-row">
+            <span class="row-label">Browser alerts</span>
+            <button class="btn blue" id="notifBtn" onclick="requestNotif()" style="font-size:11px;padding:6px 12px">Enable</button>
+          </div>
+        </div>
+
+        <!-- Telegram -->
+        <div class="section-label">Telegram Bot Alerts</div>
+        <div class="tg-card">
+          <div class="tg-status-row">
+            <div class="tg-dot" id="tgDot"></div>
+            <span class="tg-status-text" id="tgStatusTxt">Not configured</span>
+          </div>
+          <div class="instructions">
+            <ol>
+              <li>Open Telegram → search <code>@BotFather</code></li>
+              <li>Send <code>/newbot</code> → follow steps → copy Token</li>
+              <li>Search <code>@userinfobot</code> → send any message → copy Chat ID</li>
+            </ol>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Bot Token</div>
+            <input type="text" id="tgToken" placeholder="1234567890:ABCdef..." autocomplete="off">
+          </div>
+          <div class="input-group">
+            <div class="input-label">Chat ID</div>
+            <input type="text" id="tgChatId" placeholder="123456789" autocomplete="off">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="testTg()" style="flex:1">Test</button>
+            <button class="btn primary" onclick="saveTg()" style="flex:1">Save</button>
+          </div>
+        </div>
+
+        <!-- Screener Filters -->
+        <div class="section-label">Screener Filters</div>
+        <div class="filter-card">
+          <div class="filter-row">
+            <div class="filter-top">
+              <span class="filter-name">Min % change</span>
+              <span class="filter-val" id="pctLbl">+10%</span>
+            </div>
+            <input type="range" min="5" max="50" value="10" id="pctSlider"
+              oninput="document.getElementById('pctLbl').textContent='+'+this.value+'%'">
+          </div>
+          <div class="filter-row">
+            <div class="filter-top">
+              <span class="filter-name">Min relative volume</span>
+              <span class="filter-val" id="rvolLbl">4×</span>
+            </div>
+            <input type="range" min="1" max="10" value="4" id="rvolSlider"
+              oninput="document.getElementById('rvolLbl').textContent=this.value+'×'">
+          </div>
+          <div class="input-grid">
+            <div class="input-group">
+              <div class="input-label">Price min ($)</div>
+              <input type="number" id="priceMin" value="1" min="0">
+            </div>
+            <div class="input-group">
+              <div class="input-label">Price max ($)</div>
+              <input type="number" id="priceMax" value="25">
+            </div>
+            <div class="input-group">
+              <div class="input-label">Float max (M)</div>
+              <input type="number" id="floatMax" value="15">
+            </div>
+            <div class="input-group">
+              <div class="input-label">Vol min (M)</div>
+              <input type="number" id="volMin" value="0.5" step="0.1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Keywords -->
+        <div class="section-label">Catalyst Keywords</div>
+        <div class="filter-card">
+          <div style="font-size:12px;color:var(--text3);line-height:1.6">Headlines containing these words trigger an alert</div>
+          <div class="kw-wrap" id="kwWrap"></div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="kwInput" placeholder="e.g. partnership" style="flex:1"
+              onkeydown="if(event.key==='Enter')addKw()">
+            <button class="btn" onclick="addKw()">Add</button>
+          </div>
+        </div>
+
+        <div style="height:20px"></div>
+        <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--text3);padding:0 20px 20px;line-height:1.8">
+          Data: Yahoo Finance RSS + SEC EDGAR (free, ~15 min delay)<br>
+          Upgrade to Benzinga Pro API for real-time news
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- BOTTOM TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-scanner" onclick="goTab('scanner')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      SCAN
+    </button>
+    <button class="tab-btn" id="tab-news" onclick="goTab('news')">
+      <span class="tab-badge" id="newsBadge"></span>
+      <svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a4 4 0 0 1-4 4z"/><line x1="12" y1="8" x2="18" y2="8"/><line x1="12" y1="12" x2="18" y2="12"/><line x1="12" y1="16" x2="18" y2="16"/></svg>
+      NEWS
+    </button>
+    <button class="tab-btn" id="tab-watchlist" onclick="goTab('watchlist')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      WATCH
+    </button>
+    <button class="tab-btn" id="tab-alerts" onclick="goTab('alerts')">
+      <span class="tab-badge" id="alertBadge"></span>
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      ALERTS
+    </button>
+    <button class="tab-btn" id="tab-settings" onclick="goTab('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      SET
+    </button>
+  </div>
+
+</div><!-- /shell -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const S = {
+  wl: JSON.parse(localStorage.getItem('wl2') || '["GME","AMC","NVDA"]'),
+  kw: JSON.parse(localStorage.getItem('kw2') || '["FDA","approval","merger","acquisition","clinical","earnings","beat","revenue","guidance","halt","offering","phase","trial","partnership","contract","awarded","granted"]'),
+  tgToken: localStorage.getItem('tgToken') || '',
+  tgChatId: localStorage.getItem('tgChatId') || '',
+  scanning: false,
+  timer: null,
+  news: [],
+  scanner: [],
+  alerts: [],
+  seen: new Set(JSON.parse(localStorage.getItem('seen2') || '[]')),
+  cache: {},
+  notif: false,
+  newsBadge: 0,
+  alertBadge: 0,
+  currentTab: 'scanner',
+  deferredPrompt: null
+};
+
+// ── PWA INSTALL ────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  S.deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+document.getElementById('installBtn')?.addEventListener('click', async () => {
+  if (!S.deferredPrompt) return;
+  S.deferredPrompt.prompt();
+  const { outcome } = await S.deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    document.getElementById('installBanner').classList.remove('show');
+    toast('Installing app to home screen...');
+  }
+  S.deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function goTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  S.currentTab = id;
+
+  // clear badges when visiting
+  if (id === 'news') { S.newsBadge = 0; updBadge('newsBadge', 0); }
+  if (id === 'alerts') { S.alertBadge = 0; updBadge('alertBadge', 0); }
+}
+
+function updBadge(id, n) {
+  const el = document.getElementById(id);
+  if (n > 0) { el.textContent = n > 9 ? '9+' : n; el.classList.add('show'); }
+  else { el.classList.remove('show'); }
+}
+
+// ── CLOCK + MARKET ─────────────────────────────────────────────────────────
+function tickClock() {
+  const now = new Date();
+  const sgt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Singapore' }));
+  const est = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+
+  document.getElementById('sgtClock').textContent =
+    sgt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  const h = est.getHours(), m = est.getMinutes(), d = est.getDay();
+  const weekday = d > 0 && d < 6;
+  const isOpen = weekday && ((h === 9 && m >= 30) || (h >= 10 && h < 16));
+  const isPre  = weekday && ((h >= 7) && !(h === 9 && m >= 30) && h < 10);
+  const isAH   = weekday && h >= 16 && h < 20;
+
+  const banner = document.getElementById('marketBanner');
+  const sgtH = sgt.getHours(), sgtM = sgt.getMinutes();
+  const sgtStr = sgt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const estStr = est.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  if (isOpen) {
+    banner.className = 'market-banner open';
+    banner.textContent = `🟢 MARKET OPEN  ·  Best window: 9:30–11:30pm SGT  ·  EST ${estStr}`;
+  } else if (isPre) {
+    banner.className = 'market-banner';
+    banner.textContent = `⚡ Pre-market active (EST ${estStr})  ·  Market opens 9:30pm SGT`;
+  } else if (isAH) {
+    banner.className = 'market-banner';
+    banner.textContent = `🌙 After-hours  ·  Watch for catalysts setting up tomorrow's movers`;
+  } else {
+    banner.className = 'market-banner';
+    const next = weekday && h < 7 ? 'tonight' : (d === 5 || d === 6 ? 'Monday' : 'tomorrow');
+    banner.textContent = `💤 Market closed  ·  Next open: ${next} 9:30pm SGT`;
+  }
+}
+
+setInterval(tickClock, 1000);
+tickClock();
+
+// ── SCAN ───────────────────────────────────────────────────────────────────
+function toggleScan() {
+  S.scanning = !S.scanning;
+  const btn = document.getElementById('scanBtn');
+  const pill = document.getElementById('statusPill');
+  const txt = document.getElementById('statusTxt');
+
+  if (S.scanning) {
+    btn.classList.add('scanning');
+    document.getElementById('scanBtnIcon').textContent = '■';
+    document.getElementById('scanBtnText').textContent = 'STOP SCANNING';
+    pill.classList.add('live');
+    txt.textContent = 'LIVE';
+    runScan();
+    const secs = parseInt(document.getElementById('intervalSel').value) * 1000;
+    S.timer = setInterval(runScan, secs);
+    addAlert('SYSTEM', 'Scan started — ' + S.wl.length + ' tickers');
+  } else {
+    btn.classList.remove('scanning');
+    document.getElementById('scanBtnIcon').textContent = '▶';
+    document.getElementById('scanBtnText').textContent = 'START SCANNING';
+    pill.classList.remove('live');
+    txt.textContent = 'IDLE';
+    clearInterval(S.timer);
+    addAlert('SYSTEM', 'Scan stopped');
+  }
+}
+
+async function runScan() {
+  if (!S.wl.length) { toast('Add tickers to your watchlist first'); return; }
+  await Promise.all([fetchNews(), fetchPrices()]);
+}
+
+// ── NEWS ───────────────────────────────────────────────────────────────────
+const CORS = 'https://api.allorigins.win/get?url=';
+
+async function fetchNews() {
+  const fresh = [];
+  for (const t of S.wl) {
+    try {
+      const url = encodeURIComponent(`https://feeds.finance.yahoo.com/rss/2.0/headline?s=${t}&region=US&lang=en-US`);
+      const r = await fetch(CORS + url, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const xml = new DOMParser().parseFromString(d.contents, 'text/xml');
+      xml.querySelectorAll('item').forEach(item => {
+        const title = item.querySelector('title')?.textContent || '';
+        const link  = item.querySelector('link')?.textContent || '#';
+        const pub   = item.querySelector('pubDate')?.textContent || '';
+        const id = t + '|' + title.slice(0, 50);
+        if (S.seen.has(id)) return;
+        S.seen.add(id);
+        const isCat = S.kw.some(k => title.toLowerCase().includes(k.toLowerCase()));
+        const isWarn = /offering|dilut|shelf|warrant/i.test(title);
+        const obj = { t, title, link, pub, isCat, isWarn, id, ts: Date.now() };
+        fresh.push(obj);
+        if (isCat) fire(t, title);
+      });
+    } catch (_) {}
+  }
+  await fetchEdgar(fresh);
+  if (fresh.length) {
+    S.news = [...fresh, ...S.news].slice(0, 100);
+    renderNews();
+    if (S.currentTab !== 'news') {
+      S.newsBadge += fresh.filter(n => n.isCat).length;
+      updBadge('newsBadge', S.newsBadge);
+    }
+    localStorage.setItem('seen2', JSON.stringify([...S.seen].slice(-500)));
+  }
+}
+
+async function fetchEdgar(fresh) {
+  try {
+    const url = encodeURIComponent('https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&dateb=&owner=include&count=20&search_text=&output=atom');
+    const r = await fetch(CORS + url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return;
+    const d = await r.json();
+    const xml = new DOMParser().parseFromString(d.contents, 'application/xml');
+    xml.querySelectorAll('entry').forEach(entry => {
+      const title   = entry.querySelector('title')?.textContent || '';
+      const link    = entry.querySelector('link')?.getAttribute('href') || '#';
+      const updated = entry.querySelector('updated')?.textContent || '';
+      S.wl.forEach(t => {
+        const id = 'EDGAR|' + t + '|' + title.slice(0, 30);
+        if ((title.includes(t)) && !S.seen.has(id)) {
+          S.seen.add(id);
+          const obj = { t, title: '[8-K] ' + title, link, pub: updated, isCat: true, isWarn: false, id, ts: Date.now() };
+          fresh.push(obj);
+          fire(t, '8-K Filing: ' + title);
+        }
+      });
+    });
+  } catch (_) {}
+}
+
+function renderNews() {
+  const el = document.getElementById('newsList');
+  document.getElementById('newsCountTxt').textContent = S.news.length + ' items';
+  if (!S.news.length) return;
+  el.innerHTML = S.news.slice(0, 80).map(n => {
+    const tags = getTags(n.title);
+    return `<div class="news-item ${n.isCat ? 'catalyst' : n.isWarn ? 'warning' : ''}" onclick="window.open('${n.link}','_blank')">
+      <div class="ni-top">
+        <span class="ni-ticker">${n.t}</span>
+        <span class="ni-source">YF</span>
+        <span class="ni-time">${ago(n.ts)}</span>
+      </div>
+      <div class="ni-title">${esc(n.title)}</div>
+      ${tags.length ? `<div class="tags">${tags.map(tg => `<span class="tag ${tg.c}">${tg.l}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function getTags(t) {
+  const s = t.toLowerCase(), tags = [];
+  if (/fda|approv|cleared/.test(s)) tags.push({ c: 'tag-b', l: 'FDA' });
+  if (/earning|revenue|eps|beat|guidance/.test(s)) tags.push({ c: 'tag-a', l: 'EARNINGS' });
+  if (/halt/.test(s)) tags.push({ c: 'tag-r', l: 'HALT' });
+  if (/offering|dilut|warrant|shelf/.test(s)) tags.push({ c: 'tag-r', l: 'OFFERING' });
+  if (/merger|acqui|partner|contract|award/.test(s)) tags.push({ c: 'tag-g', l: 'CATALYST' });
+  if (/clinical|trial|phase/.test(s)) tags.push({ c: 'tag-b', l: 'CLINICAL' });
+  return tags;
+}
+
+// ── PRICES ─────────────────────────────────────────────────────────────────
+async function fetchPrices() {
+  if (!S.wl.length) return;
+  try {
+    const syms = S.wl.join(',');
+    const url = encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=symbol,regularMarketPrice,regularMarketChangePercent,regularMarketVolume,averageDailyVolume3Month,floatShares,regularMarketDayHigh,regularMarketDayLow`);
+    const r = await fetch(CORS + url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return;
+    const raw = await r.json();
+    const quotes = JSON.parse(raw.contents)?.quoteResponse?.result || [];
+    const hits = [];
+    quotes.forEach(q => {
+      const pct   = q.regularMarketChangePercent || 0;
+      const price = q.regularMarketPrice || 0;
+      const vol   = q.regularMarketVolume || 0;
+      const avg   = q.averageDailyVolume3Month || 1;
+      const rvol  = avg > 0 ? vol / avg : 0;
+      const flt   = (q.floatShares || 0) / 1e6;
+      S.cache[q.symbol] = { pct, price, vol, rvol, flt };
+
+      const minPct  = parseFloat(document.getElementById('pctSlider').value);
+      const minRvol = parseFloat(document.getElementById('rvolSlider').value);
+      const prMin   = parseFloat(document.getElementById('priceMin').value);
+      const prMax   = parseFloat(document.getElementById('priceMax').value);
+      const fMax    = parseFloat(document.getElementById('floatMax').value);
+      const vMin    = parseFloat(document.getElementById('volMin').value) * 1e6;
+
+      if (pct >= minPct && price >= prMin && price <= prMax && rvol >= minRvol && vol >= vMin && (flt <= fMax || flt === 0)) {
+        hits.push({ sym: q.symbol, price, pct, vol, rvol, flt, high: q.regularMarketDayHigh, low: q.regularMarketDayLow });
+        if (rvol >= minRvol * 1.5) addAlert(q.symbol, `🔥 Scanner hit +${pct.toFixed(1)}% RVOL ${rvol.toFixed(1)}×`);
+      }
+    });
+    hits.sort((a, b) => b.pct - a.pct);
+    S.scanner = hits;
+    renderScanner();
+    renderWatchlist();
+  } catch (_) {}
+}
+
+function renderScanner() {
+  const el = document.getElementById('scannerList');
+  if (!S.scanner.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>No stocks meeting filters yet.<br>Try lowering % or RVOL thresholds.</div>';
+    return;
+  }
+  el.innerHTML = S.scanner.map(s => {
+    const hot = s.rvol >= 6;
+    return `<div class="scanner-item ${hot ? 'hot' : ''}">
+      <div class="si-top">
+        <span class="si-sym">${s.sym}${hot ? ' 🔥' : ''}</span>
+        <span class="si-price">$${s.price.toFixed(2)}</span>
+      </div>
+      <div class="si-grid">
+        <div class="si-stat"><span class="si-stat-label">Change</span><span class="si-stat-val hot">+${s.pct.toFixed(1)}%</span></div>
+        <div class="si-stat"><span class="si-stat-label">Rel Vol</span><span class="si-stat-val ${s.rvol >= 4 ? 'hot' : 'warn'}">${s.rvol.toFixed(1)}×</span></div>
+        <div class="si-stat"><span class="si-stat-label">Float</span><span class="si-stat-val">${s.flt > 0 ? s.flt.toFixed(1) + 'M' : 'N/A'}</span></div>
+        <div class="si-stat"><span class="si-stat-label">Volume</span><span class="si-stat-val">${(s.vol/1e6).toFixed(2)}M</span></div>
+        <div class="si-stat"><span class="si-stat-label">High</span><span class="si-stat-val">$${s.high?.toFixed(2)||'--'}</span></div>
+        <div class="si-stat"><span class="si-stat-label">Low</span><span class="si-stat-val">$${s.low?.toFixed(2)||'--'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── WATCHLIST ──────────────────────────────────────────────────────────────
+function addTicker() {
+  const inp = document.getElementById('tickerInput');
+  const sym = inp.value.trim().toUpperCase().replace(/[^A-Z]/g, '');
+  if (!sym) return;
+  if (S.wl.includes(sym)) { toast(sym + ' already in watchlist'); inp.value = ''; return; }
+  S.wl.push(sym);
+  save();
+  inp.value = '';
+  renderWatchlist();
+  toast(sym + ' added');
+}
+
+function removeTicker(sym) {
+  S.wl = S.wl.filter(t => t !== sym);
+  save();
+  renderWatchlist();
+  toast(sym + ' removed');
+}
+
+function renderWatchlist() {
+  const el = document.getElementById('watchlistEl');
+  if (!S.wl.length) {
+    el.innerHTML = '<div class="empty" style="padding:30px"><div class="empty-icon">📋</div>Add tickers above to start</div>';
+    return;
+  }
+  el.innerHTML = S.wl.map(t => {
+    const c = S.cache[t];
+    const hasAlert = S.news.some(n => n.t === t && n.isCat);
+    return `<div class="wl-item">
+      <span class="wl-sym">${t}</span>
+      <span class="wl-price">${c ? '$' + c.price.toFixed(2) : '---'}</span>
+      <div class="wl-right">
+        ${c ? `<span class="wl-chg ${c.pct >= 0 ? 'up' : 'down'}">${c.pct >= 0 ? '+' : ''}${c.pct.toFixed(1)}%</span>` : ''}
+        ${hasAlert ? '<div class="alert-dot"></div>' : ''}
+        <button class="del-btn" onclick="removeTicker('${t}')">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function save() { localStorage.setItem('wl2', JSON.stringify(S.wl)); }
+
+// ── ALERTS ─────────────────────────────────────────────────────────────────
+function addAlert(sym, msg) {
+  const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Singapore' });
+  S.alerts.unshift({ sym, msg, time: now });
+  renderAlerts();
+  if (S.currentTab !== 'alerts' && sym !== 'SYSTEM') {
+    S.alertBadge++;
+    updBadge('alertBadge', S.alertBadge);
+  }
+}
+
+function renderAlerts() {
+  const el = document.getElementById('alertList');
+  if (!S.alerts.length) return;
+  el.innerHTML = S.alerts.slice(0, 100).map(a => `
+    <div class="alert-item">
+      <div class="alert-top">
+        <span class="alert-sym">${esc(a.sym)}</span>
+        <span class="alert-time">${a.time} SGT</span>
+      </div>
+      <div class="alert-msg">${esc(a.msg)}</div>
+    </div>`).join('');
+}
+
+function clearAlerts() { S.alerts = []; document.getElementById('alertList').innerHTML = '<div class="empty"><div class="empty-icon">🔔</div>Alert log cleared</div>'; }
+
+// ── FIRE ALERT ─────────────────────────────────────────────────────────────
+function fire(sym, msg) {
+  addAlert(sym, '🚨 CATALYST: ' + msg);
+
+  // Browser notif
+  if (S.notif && Notification.permission === 'granted') {
+    new Notification(`🚨 ${sym} — Catalyst`, { body: msg.slice(0, 100) });
+  }
+
+  // Telegram
+  if (S.tgToken && S.tgChatId) {
+    const sgt = new Date().toLocaleString('en-US', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hour12: false });
+    const est = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false });
+    fetch(`https://api.telegram.org/bot${S.tgToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: S.tgChatId,
+        text: `🚨 *${sym} CATALYST*\n\n${msg}\n\n🕐 SGT: ${sgt} | EST: ${est}`,
+        parse_mode: 'Markdown'
+      })
+    }).catch(() => {});
+  }
+}
+
+// ── NOTIFICATIONS ──────────────────────────────────────────────────────────
+async function requestNotif() {
+  if (!('Notification' in window)) { toast('Notifications not supported on this browser'); return; }
+  const p = await Notification.requestPermission();
+  if (p === 'granted') {
+    S.notif = true;
+    document.getElementById('notifBtn').textContent = '✓ Enabled';
+    document.getElementById('notifBtn').classList.add('primary');
+    toast('Browser alerts enabled');
+  } else {
+    toast('Permission denied — use Telegram instead');
+  }
+}
+
+// Check on load
+if ('Notification' in window && Notification.permission === 'granted') {
+  S.notif = true;
+  document.getElementById('notifBtn').textContent = '✓ Enabled';
+  document.getElementById('notifBtn').classList.add('primary');
+}
+
+// ── TELEGRAM ───────────────────────────────────────────────────────────────
+function saveTg() {
+  S.tgToken  = document.getElementById('tgToken').value.trim();
+  S.tgChatId = document.getElementById('tgChatId').value.trim();
+  localStorage.setItem('tgToken', S.tgToken);
+  localStorage.setItem('tgChatId', S.tgChatId);
+  updateTgUI(true);
+  toast('Telegram settings saved');
+}
+
+async function testTg() {
+  const tok = document.getElementById('tgToken').value.trim();
+  const cid = document.getElementById('tgChatId').value.trim();
+  if (!tok || !cid) { toast('Enter token and chat ID first'); return; }
+  toast('Sending test message...');
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${tok}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: cid, text: '✅ *Momentum Scanner* connected! 🇸🇬\n\nYou will receive catalyst alerts here.', parse_mode: 'Markdown' })
+    });
+    const d = await r.json();
+    d.ok ? toast('✅ Test message sent — check Telegram!') : toast('❌ Failed: ' + d.description);
+  } catch (_) { toast('❌ Network error — check credentials'); }
+}
+
+function updateTgUI(ok) {
+  const dot = document.getElementById('tgDot');
+  const txt = document.getElementById('tgStatusTxt');
+  dot.className = 'tg-dot ' + (ok ? 'on' : '');
+  txt.textContent = ok ? 'Connected — alerts active' : 'Not configured';
+  txt.className = 'tg-status-text ' + (ok ? 'on' : '');
+}
+
+if (S.tgToken && S.tgChatId) {
+  document.getElementById('tgToken').value = S.tgToken;
+  document.getElementById('tgChatId').value = S.tgChatId;
+  updateTgUI(true);
+}
+
+// ── KEYWORDS ───────────────────────────────────────────────────────────────
+function addKw() {
+  const inp = document.getElementById('kwInput');
+  const kw = inp.value.trim();
+  if (!kw || S.kw.includes(kw)) { inp.value = ''; return; }
+  S.kw.push(kw);
+  localStorage.setItem('kw2', JSON.stringify(S.kw));
+  inp.value = '';
+  renderKw();
+}
+
+function removeKw(kw) {
+  S.kw = S.kw.filter(k => k !== kw);
+  localStorage.setItem('kw2', JSON.stringify(S.kw));
+  renderKw();
+}
+
+function renderKw() {
+  document.getElementById('kwWrap').innerHTML = S.kw.map(k =>
+    `<div class="kw-pill">${esc(k)}<button onclick="removeKw('${esc(k)}')">×</button></div>`
+  ).join('');
+}
+
+// ── UTILS ───────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ago(ts) { const s = Math.floor((Date.now()-ts)/1000); return s < 60 ? s+'s ago' : s < 3600 ? Math.floor(s/60)+'m ago' : Math.floor(s/3600)+'h ago'; }
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+renderWatchlist();
+renderKw();
+addAlert('SYSTEM', 'App loaded. Go to Watchlist tab to add tickers, then start scanning.');
+</script>
+</body>
+</html>
