@@ -591,7 +591,7 @@ async function fetchNews(){
         const score=calcImpact(title,c.pct||0,c.rvol||0);
         const obj={t,title,link,isCat,isWarn,id,ts:Date.now(),src:'watchlist',score};
         fresh.push(obj);
-        if(isCat||score>=3)fireTg(t,title,score,'watchlist');
+        if(isCat||score>=3)fireTg(t,title,score,'watchlist',link);
       });
     }catch(_){}
   }
@@ -625,7 +625,7 @@ async function fetchEdgar(fresh){
           const score=calcImpact(title,c.pct||0,c.rvol||0);
           const obj={t,title:'[8-K] '+title,link,isCat:true,isWarn:false,id,ts:Date.now(),src:'watchlist',score};
           fresh.push(obj);
-          fireTg(t,'SEC 8-K: '+title,score,'watchlist');
+          fireTg(t,'SEC 8-K: '+title,score,'watchlist',link);
         }
       });
     });
@@ -736,7 +736,7 @@ function addScreenerNewsHit(sym,pct,rvol,price,exch){
   const title=`Screener hit: ${sym} up ${pct.toFixed(1)}% on ${exch} with ${rvol.toFixed(1)}× relative volume at $${price.toFixed(2)}`;
   const obj={t:sym,title,link:'https://finance.yahoo.com/quote/'+sym,isCat:false,isWarn:false,id,ts:Date.now(),src:'screener',score};
   S.news.unshift(obj);
-  if(score>=3)fireTg(sym,title,score,'screener');
+  if(score>=3)fireTg(sym,title,score,'screener','https://finance.yahoo.com/quote/'+sym);
 }
 
 function renderScanner(){
@@ -838,7 +838,7 @@ function renderAlerts(){
 function clearAlerts(){S.alerts=[];document.getElementById('alertList').innerHTML='<div class="empty"><div class="empty-icon">🔔</div>Alert log cleared</div>'}
 
 // ── TELEGRAM (two chats) ───────────────────────────────────────────────────
-function fireTg(sym,msg,score,src){
+function fireTg(sym,msg,score,src,link){
   addAlert(sym,src,(score>=4?'🚨':'📢')+' '+msg);
   if(S.notif&&Notification.permission==='granted'){
     new Notification((score>=4?'🚨':'📢')+' '+sym,{body:msg.slice(0,100)});
@@ -851,10 +851,11 @@ function fireTg(sym,msg,score,src){
   const emoji=score>=5?'🚨🚨':score>=4?'🚨':score>=3?'📢':'📰';
   const scoreStr=['','⬜ LOW','🟡 MEDIUM','🟠 NOTABLE','🔴 HIGH','🔴🔴 CRITICAL'][score]||'';
   const srcLabel=src==='watchlist'?'📋 WATCHLIST':'🔍 SCREENER';
-  const text=`${emoji} *${sym}* — ${srcLabel}\n\n${msg}\n\n📊 Impact: ${scoreStr}\n🕐 SGT: ${sgt} | EST: ${est}`;
+  const linkLine=link&&link!=='#'?`\n\n🔗 [Read full article](${link})`:'';
+  const text=`${emoji} *${sym}* — ${srcLabel}\n\n${msg}\n\n📊 Impact: ${scoreStr}\n🕐 SGT: ${sgt} | EST: ${est}${linkLine}`;
   fetch(`https://api.telegram.org/bot${S.tgToken}/sendMessage`,{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:chatId,text,parse_mode:'Markdown'})
+    body:JSON.stringify({chat_id:chatId,text,parse_mode:'Markdown',disable_web_page_preview:false})
   }).catch(()=>{});
 }
 
