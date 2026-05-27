@@ -128,6 +128,7 @@ select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;p
 .impact-5{background:rgba(255,69,96,.25);color:var(--red);border:1px solid rgba(255,69,96,.6);animation:glow 1.5s infinite} /* critical */
 @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,69,96,0)}50%{box-shadow:0 0 8px rgba(255,69,96,.4)}}
 .impact-dots{display:flex;gap:2px}
+.impact-reason{font-family:var(--mono);font-size:9px;color:var(--text3);background:var(--bg3);border:0.5px solid var(--border2);border-radius:3px;padding:1px 5px;letter-spacing:.03em}
 .impact-dot{width:5px;height:5px;border-radius:50%;background:var(--border2)}
 .impact-dot.filled-low{background:var(--text3)}
 .impact-dot.filled-med{background:var(--amber)}
@@ -554,16 +555,33 @@ function calcImpact(title, pct, rvol){
   return 1;
 }
 
-function impactHTML(score){
+function impactHTML(score,title){
   const labels={1:'LOW',2:'MEDIUM',3:'NOTABLE',4:'HIGH',5:'CRITICAL'};
+  const emoji={1:'⬜',2:'🟡',3:'🟠',4:'🔴',5:'🔴🔴'};
   const cls={1:'impact-1',2:'impact-2',3:'impact-3',4:'impact-4',5:'impact-5'};
   const dotCls={1:'filled-low',2:'filled-low',3:'filled-med',4:'filled-high',5:'filled-high'};
   const dots=[1,2,3,4,5].map(i=>
     `<div class="impact-dot ${i<=score?dotCls[score]:''}"></div>`
   ).join('');
+  // build reason string from keywords found in title
+  const reasons=[];
+  if(title){
+    const t=title.toLowerCase();
+    if(/fda|approv|cleared/.test(t))reasons.push('FDA');
+    if(/merger|acqui|takeover/.test(t))reasons.push('M&A');
+    if(/earning|revenue|beat|eps/.test(t))reasons.push('Earnings');
+    if(/contract|award|partner/.test(t))reasons.push('Contract');
+    if(/clinical|trial|phase/.test(t))reasons.push('Clinical');
+    if(/halt/.test(t))reasons.push('Halt');
+    if(/offering|dilut/.test(t))reasons.push('Dilution');
+    if(/guidance/.test(t))reasons.push('Guidance');
+    if(/8-K/.test(title))reasons.push('SEC Filing');
+  }
+  const reasonStr=reasons.length?`<span class="impact-reason">${reasons.join(' · ')}</span>`:'';
   return `<div class="impact-score">
     <div class="impact-dots">${dots}</div>
-    <span class="impact-badge ${cls[score]}">${labels[score]}</span>
+    <span class="impact-badge ${cls[score]}">${emoji[score]} ${labels[score]}</span>
+    ${reasonStr}
   </div>`;
 }
 
@@ -655,7 +673,7 @@ function renderNews(){
       <div class="ni-footer">
         <div class="tags">${tags.map(tg=>`<span class="tag ${tg.c}">${tg.l}</span>`).join('')}</div>
         <div style="display:flex;align-items:center;gap:8px">
-          ${impactHTML(n.score)}
+          ${impactHTML(n.score,n.title)}
           <span class="ni-read-more">Read ↗</span>
         </div>
       </div>
@@ -812,9 +830,9 @@ function renderWatchlist(){
 function saveWl(){localStorage.setItem('wl2',JSON.stringify(S.wl))}
 
 // ── ALERTS ─────────────────────────────────────────────────────────────────
-function addAlert(sym,src,msg){
+function addAlert(sym,src,msg,link,score){
   const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Asia/Singapore'});
-  S.alerts.unshift({sym,src,msg,time:now});
+  S.alerts.unshift({sym,src,msg,link:link||null,score:score||null,time:now});
   renderAlerts();
   if(S.currentTab!=='alerts'&&sym!=='SYSTEM'){S.alertBadge++;updBadge('alertBadge',S.alertBadge)}
 }
@@ -824,6 +842,8 @@ function renderAlerts(){
   if(!S.alerts.length)return;
   el.innerHTML=S.alerts.slice(0,100).map(a=>{
     const srcBadge=a.src==='watchlist'?'<span class="alert-src ni-source-wl">WL</span>':a.src==='screener'?'<span class="alert-src ni-source-scr">SCR</span>':'';
+    const linkBtn=a.link?`<a href="${a.link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--blue);text-decoration:none;background:var(--blue-dim);border:1px solid rgba(77,159,255,.25);padding:3px 9px;border-radius:5px;">🔗 Read article ↗</a>`:'';
+    const scoreBadge=a.score?impactHTML(a.score,a.msg):'';
     return `<div class="alert-item">
       <div class="alert-top">
         <span class="alert-sym">${esc(a.sym)}</span>
@@ -831,6 +851,8 @@ function renderAlerts(){
         <span class="alert-time">${a.time} SGT</span>
       </div>
       <div class="alert-msg">${esc(a.msg)}</div>
+      ${scoreBadge}
+      ${linkBtn}
     </div>`;
   }).join('');
 }
@@ -839,7 +861,7 @@ function clearAlerts(){S.alerts=[];document.getElementById('alertList').innerHTM
 
 // ── TELEGRAM (two chats) ───────────────────────────────────────────────────
 function fireTg(sym,msg,score,src,link){
-  addAlert(sym,src,(score>=4?'🚨':'📢')+' '+msg);
+  addAlert(sym,src,(score>=4?'🚨':'📢')+' '+msg,link,score);
   if(S.notif&&Notification.permission==='granted'){
     new Notification((score>=4?'🚨':'📢')+' '+sym,{body:msg.slice(0,100)});
   }
